@@ -1,6 +1,7 @@
 use super::layer::RenderLayer;
 use super::*;
 
+use enum_primitive_derive::Primitive;
 use serde::{Deserialize, Serialize};
 
 pub const SCREEN_BLOCK_SIZE: u32 = 0x800;
@@ -231,7 +232,7 @@ impl BlendFlags {
     }
 }
 
-#[derive(SmartDefault, Debug, Serialize, Deserialize, Primitive, PartialEq, Eq, Clone, Copy)]
+#[derive(Default, Debug, Serialize, Deserialize, Primitive, PartialEq, Eq, Clone, Copy)]
 pub enum BlendMode {
     #[default]
     BldNone = 0b00,

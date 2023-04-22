@@ -1,6 +1,7 @@
 use num::FromPrimitive;
 
 use super::*;
+use enum_primitive_derive::Primitive;
 
 #[derive(Primitive, Debug, Ord, Eq, PartialOrd, PartialEq, Clone, Copy)]
 pub enum RenderLayerKind {

@@ -1,7 +1,6 @@
 use super::super::regs::*;
 use super::super::*;
-
-use rustboyadvance_utils::index2d;
+use enum_primitive_derive::Primitive;
 
 const OVRAM: u32 = 0x0601_0000;
 const PALRAM_OFS_FG: u32 = 0x200;

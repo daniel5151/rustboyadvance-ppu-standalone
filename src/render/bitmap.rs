@@ -5,9 +5,7 @@ use super::super::Gpu;
 use super::super::Rgb15;
 
 use super::{utils, MODE5_VIEWPORT, SCREEN_VIEWPORT};
-
-use crate::prelude::BusIO;
-use rustboyadvance_utils::index2d;
+use crate::memory::BusIO;
 
 impl Gpu {
     pub(in super::super) fn render_mode3(&mut self, bg: usize) {

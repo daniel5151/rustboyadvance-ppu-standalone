@@ -4,9 +4,7 @@ use super::super::consts::*;
 use super::super::Rgb15;
 use super::super::{Gpu, PixelFormat, SCREEN_BLOCK_SIZE};
 use super::{utils, ViewPort};
-use crate::prelude::BusIO;
-
-use rustboyadvance_utils::index2d;
+use crate::memory::BusIO;
 
 impl Gpu {
     pub(in super::super) fn render_reg_bg(&mut self, bg: usize) {

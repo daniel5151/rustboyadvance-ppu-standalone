@@ -3,6 +3,13 @@ name = "rustyboyadvance-ppu"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+enum-primitive-derive = "^0.1"
+num = "0.2.1"
+num-traits = "0.2"
+serde = { version = "1.0.104", features = ["derive", "rc"] }
+bitfield = "0.13.1"
+bitflags = "1.2.1"
+arrayvec = "0.5.2"
+debug_stub_derive = "0.3.0"
+log = "0.4"
