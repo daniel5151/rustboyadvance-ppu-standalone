@@ -29,10 +29,6 @@ impl Rgb15 {
         c
     }
 
-    pub fn get_rgb(&self) -> (u16, u16, u16) {
-        (self.r(), self.g(), self.b())
-    }
-
     pub fn is_transparent(&self) -> bool {
         self.0 == 0x8000
     }

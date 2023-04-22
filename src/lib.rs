@@ -75,17 +75,17 @@ use enum_primitive_derive::Primitive;
 use memory::{Addr, BusIO};
 
 #[derive(Debug, Primitive, Copy, Clone)]
-pub enum PixelFormat {
+enum PixelFormat {
     BPP4 = 0,
     BPP8 = 1,
 }
 
 #[derive(Debug, Default, Copy, Clone)]
-pub struct AffineMatrix {
-    pub pa: i32,
-    pub pb: i32,
-    pub pc: i32,
-    pub pd: i32,
+struct AffineMatrix {
+    pa: i32,
+    pb: i32,
+    pc: i32,
+    pd: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Copy, Clone)]
@@ -101,11 +101,11 @@ pub struct BgAffine {
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
-pub struct ObjBufferEntry {
-    pub(crate) window: bool,
-    pub(crate) alpha: bool,
-    pub(crate) color: Rgb15,
-    pub(crate) priority: u16,
+struct ObjBufferEntry {
+    window: bool,
+    alpha: bool,
+    color: Rgb15,
+    priority: u16,
 }
 
 impl Default for ObjBufferEntry {
@@ -123,14 +123,10 @@ impl Default for ObjBufferEntry {
 pub struct Gpu {
     interrupt_flags: SharedInterruptFlags,
 
-    /// how many cycles left until next gpu state ?
-    cycles_left_for_current_state: usize,
-
     // registers
     pub vcount: usize, // VCOUNT
     pub dispcnt: DisplayControl,
     pub dispstat: DisplayStatus,
-
     pub bgcnt: [BgControl; 4],
     pub bg_vofs: [u16; 4],
     pub bg_hofs: [u16; 4],
@@ -143,13 +139,15 @@ pub struct Gpu {
     pub bldcnt: BlendControl,
     pub bldalpha: BlendAlpha,
     pub bldy: u16,
-    pub palette_ram: Box<[u8]>,
-    pub vram: Box<[u8]>,
-    pub oam: Box<[u8]>,
-    pub(crate) vram_obj_tiles_start: u32,
-    pub(crate) obj_buffer: Box<[ObjBufferEntry]>,
-    pub(crate) frame_buffer: Box<[u32]>,
-    pub(crate) bg_line: [Box<[Rgb15]>; 4],
+
+    palette_ram: Box<[u8]>,
+    vram: Box<[u8]>,
+    oam: Box<[u8]>,
+
+    vram_obj_tiles_start: u32,
+    obj_buffer: Box<[ObjBufferEntry]>,
+    frame_buffer: Box<[u32]>,
+    bg_line: [Box<[Rgb15]>; 4],
 }
 
 impl InterruptConnect for Gpu {
@@ -186,7 +184,6 @@ impl Gpu {
             bldy: 0,
 
             vcount: 0,
-            cycles_left_for_current_state: CYCLES_HDRAW,
             palette_ram: vec![0; PALETTE_RAM_SIZE].into_boxed_slice(),
             vram: vec![0; VIDEO_RAM_SIZE].into_boxed_slice(),
             oam: vec![0; OAM_SIZE].into_boxed_slice(),
@@ -227,7 +224,7 @@ impl Gpu {
     }
 
     /// helper method that reads the palette index from a base address and x + y
-    pub fn read_pixel_index(&mut self, addr: u32, x: u32, y: u32, format: PixelFormat) -> usize {
+    fn read_pixel_index(&mut self, addr: u32, x: u32, y: u32, format: PixelFormat) -> usize {
         match format {
             PixelFormat::BPP4 => self.read_pixel_index_bpp4(addr, x, y),
             PixelFormat::BPP8 => self.read_pixel_index_bpp8(addr, x, y),
@@ -235,7 +232,7 @@ impl Gpu {
     }
 
     #[inline]
-    pub fn read_pixel_index_bpp4(&mut self, addr: u32, x: u32, y: u32) -> usize {
+    fn read_pixel_index_bpp4(&mut self, addr: u32, x: u32, y: u32) -> usize {
         let ofs = addr + index2d!(u32, x / 2, y, 4);
         let ofs = ofs as usize;
         let byte = self.vram.read_8(ofs as u32);
@@ -247,13 +244,13 @@ impl Gpu {
     }
 
     #[inline]
-    pub fn read_pixel_index_bpp8(&mut self, addr: u32, x: u32, y: u32) -> usize {
+    fn read_pixel_index_bpp8(&mut self, addr: u32, x: u32, y: u32) -> usize {
         let ofs = addr;
         self.vram.read_8(ofs + index2d!(u32, x, y, 8)) as usize
     }
 
     #[inline(always)]
-    pub fn get_palette_color(&mut self, index: u32, palette_bank: u32, offset: u32) -> Rgb15 {
+    fn get_palette_color(&mut self, index: u32, palette_bank: u32, offset: u32) -> Rgb15 {
         if index == 0 || (palette_bank != 0 && index % 16 == 0) {
             return Rgb15::TRANSPARENT;
         }
@@ -266,16 +263,16 @@ impl Gpu {
     }
 
     #[inline]
-    pub(crate) fn obj_buffer_get(&self, x: usize, y: usize) -> &ObjBufferEntry {
+    fn obj_buffer_get(&self, x: usize, y: usize) -> &ObjBufferEntry {
         &self.obj_buffer[index2d!(x, y, DISPLAY_WIDTH)]
     }
 
     #[inline]
-    pub(crate) fn obj_buffer_get_mut(&mut self, x: usize, y: usize) -> &mut ObjBufferEntry {
+    fn obj_buffer_get_mut(&mut self, x: usize, y: usize) -> &mut ObjBufferEntry {
         &mut self.obj_buffer[index2d!(x, y, DISPLAY_WIDTH)]
     }
 
-    pub fn get_ref_point(&self, bg: usize) -> Point {
+    fn get_ref_point(&self, bg: usize) -> Point {
         assert!(bg == 2 || bg == 3);
         (
             self.bg_aff[bg - 2].internal_x,
@@ -283,7 +280,7 @@ impl Gpu {
         )
     }
 
-    pub fn render_scanline(&mut self) {
+    fn render_scanline(&mut self) {
         if self.dispcnt.force_blank {
             for x in self.frame_buffer[self.vcount * DISPLAY_WIDTH..]
                 .iter_mut()
@@ -344,7 +341,7 @@ impl Gpu {
     }
 
     /// Clears the gpu obj buffer
-    pub fn obj_buffer_reset(&mut self) {
+    fn obj_buffer_reset(&mut self) {
         for x in self.obj_buffer.iter_mut() {
             *x = Default::default();
         }

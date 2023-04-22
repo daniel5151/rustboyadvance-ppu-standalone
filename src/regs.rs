@@ -19,16 +19,16 @@ pub enum ObjMapping {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct DisplayControl {
-    pub mode: u16,
-    pub display_frame_select: u16,
-    pub hblank_interval_free: bool,
-    pub obj_character_vram_mapping: bool,
-    pub force_blank: bool,
-    pub enable_bg: [bool; 4],
-    pub enable_obj: bool,
-    pub enable_window0: bool,
-    pub enable_window1: bool,
-    pub enable_obj_window: bool,
+    pub(crate) mode: u16,
+    pub(crate) display_frame_select: u16,
+    pub(crate) hblank_interval_free: bool,
+    pub(crate) obj_character_vram_mapping: bool,
+    pub(crate) force_blank: bool,
+    pub(crate) enable_bg: [bool; 4],
+    pub(crate) enable_obj: bool,
+    pub(crate) enable_window0: bool,
+    pub(crate) enable_window1: bool,
+    pub(crate) enable_obj_window: bool,
 }
 
 impl From<u16> for DisplayControl {
@@ -91,13 +91,13 @@ impl GpuMemoryMappedIO for DisplayControl {
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct DisplayStatus {
-    pub vblank_flag: bool,
-    pub hblank_flag: bool,
-    pub vcount_flag: bool,
-    pub vblank_irq_enable: bool,
-    pub hblank_irq_enable: bool,
-    pub vcount_irq_enable: bool,
-    pub vcount_setting: usize,
+    pub(crate) vblank_flag: bool,
+    pub(crate) hblank_flag: bool,
+    pub(crate) vcount_flag: bool,
+    pub(crate) vblank_irq_enable: bool,
+    pub(crate) hblank_irq_enable: bool,
+    pub(crate) vcount_irq_enable: bool,
+    pub(crate) vcount_setting: usize,
 }
 
 impl GpuMemoryMappedIO for DisplayStatus {
@@ -125,13 +125,13 @@ impl GpuMemoryMappedIO for DisplayStatus {
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct BgControl {
-    pub priority: u16,
-    pub character_base_block: u16,
-    pub screen_base_block: u16,
-    pub mosaic: bool,
-    pub palette256: bool,
-    pub affine_wraparound: bool,
-    pub size: u8,
+    pub(crate) priority: u16,
+    pub(crate) character_base_block: u16,
+    pub(crate) screen_base_block: u16,
+    pub(crate) mosaic: bool,
+    pub(crate) palette256: bool,
+    pub(crate) affine_wraparound: bool,
+    pub(crate) size: u8,
 }
 
 impl GpuMemoryMappedIO for BgControl {
@@ -178,7 +178,7 @@ impl BgControl {
         }
     }
     #[inline]
-    pub fn tile_format(&self) -> (u32, PixelFormat) {
+    pub(crate) fn tile_format(&self) -> (u32, PixelFormat) {
         if self.palette256 {
             (2 * TILE_SIZE, PixelFormat::BPP8)
         } else {
@@ -211,20 +211,6 @@ bitflags! {
 }
 
 impl BlendFlags {
-    const BG_LAYER_FLAG: [BlendFlags; 4] = [
-        BlendFlags::BG0,
-        BlendFlags::BG1,
-        BlendFlags::BG2,
-        BlendFlags::BG3,
-    ];
-    #[inline]
-    pub fn from_bg(bg: usize) -> BlendFlags {
-        Self::BG_LAYER_FLAG[bg]
-    }
-    #[inline]
-    pub fn obj_enabled(&self) -> bool {
-        self.contains(BlendFlags::OBJ)
-    }
     #[inline]
     pub fn contains_render_layer(&self, layer: &RenderLayer) -> bool {
         let layer_flags = BlendFlags::from_bits_truncate(layer.kind as u16);
@@ -243,9 +229,9 @@ pub enum BlendMode {
 
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone)]
 pub struct BlendControl {
-    pub target1: BlendFlags,
-    pub target2: BlendFlags,
-    pub mode: BlendMode,
+    pub(crate) target1: BlendFlags,
+    pub(crate) target2: BlendFlags,
+    pub(crate) mode: BlendMode,
 }
 
 impl GpuMemoryMappedIO for BlendControl {
@@ -264,8 +250,8 @@ impl GpuMemoryMappedIO for BlendControl {
 
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone)]
 pub struct BlendAlpha {
-    pub eva: u16,
-    pub evb: u16,
+    pub(crate) eva: u16,
+    pub(crate) evb: u16,
 }
 
 impl GpuMemoryMappedIO for BlendAlpha {

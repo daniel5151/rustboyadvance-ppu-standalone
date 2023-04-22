@@ -13,12 +13,6 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn inside(&self, x: usize, y: usize) -> bool {
-        let left = self.left();
-        let right = self.right();
-        self.contains_y(y) && (x >= left && x < right)
-    }
-
     #[inline]
     pub fn left(&self) -> usize {
         self.left as usize

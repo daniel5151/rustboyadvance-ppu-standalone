@@ -13,19 +13,6 @@ pub enum RenderLayerKind {
     Objects = 0b00010000,
 }
 
-impl RenderLayerKind {
-    pub fn get_blend_flag(&self) -> BlendFlags {
-        match self {
-            RenderLayerKind::Background0 => BlendFlags::BG0,
-            RenderLayerKind::Background1 => BlendFlags::BG1,
-            RenderLayerKind::Background2 => BlendFlags::BG2,
-            RenderLayerKind::Background3 => BlendFlags::BG3,
-            RenderLayerKind::Objects => BlendFlags::OBJ,
-            RenderLayerKind::Backdrop => BlendFlags::BACKDROP,
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct RenderLayer {
     pub kind: RenderLayerKind,
