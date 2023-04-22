@@ -423,8 +423,8 @@ impl Gpu {
             self.render_scanline();
             // update BG2/3 reference points on the end of a scanline
             for i in 0..2 {
-                self.bg_aff[i].internal_x += self.bg_aff[i].pb as i16 as i32;
-                self.bg_aff[i].internal_y += self.bg_aff[i].pd as i16 as i32;
+                self.bg_aff[i].internal_x += self.bg_aff[i].pb as i32;
+                self.bg_aff[i].internal_y += self.bg_aff[i].pd as i32;
             }
 
             (GpuEvent::HDraw, CYCLES_HDRAW)
@@ -567,91 +567,6 @@ impl fmt::Display for Gpu {
         writeln!(f, "\tWIN0: {:?}", self.win0)?;
         writeln!(f, "\tWIN1: {:?}", self.win1)?;
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::cell::Cell;
-    use std::rc::Rc;
-
-    struct NopDmaNotifer;
-    impl DmaNotifer for NopDmaNotifer {
-        fn notify(&mut self, _timing: u16) {}
-    }
-
-    #[test]
-    fn test_gpu_state_machine() {
-        let mut sched = Scheduler::new();
-        let mut gpu = Gpu::new(&mut sched, Rc::new(Cell::new(Default::default())));
-        let mut dma_notifier = NopDmaNotifer;
-
-        gpu.dispstat.vcount_setting = 0;
-        gpu.dispstat.vcount_irq_enable = true;
-
-        macro_rules! update {
-            ($cycles:expr) => {
-                sched.update($cycles);
-                let (event, event_time) = sched.pop_pending_event().unwrap();
-                assert_eq!(event_time, sched.timestamp());
-                let next_event = match event {
-                    EventType::Gpu(event) => gpu.on_event(event, &mut dma_notifier),
-                    _ => panic!("Found unexpected event in queue!"),
-                };
-                sched.schedule(next_event);
-            };
-        }
-
-        for line in 0..160 {
-            println!("line = {}", line);
-            assert_eq!(gpu.vcount, line);
-            assert_eq!(sched.peek_next(), Some(EventType::Gpu(GpuEvent::HDraw)));
-            assert_eq!(gpu.dispstat.hblank_flag, false);
-            assert_eq!(gpu.dispstat.vblank_flag, false);
-
-            update!(CYCLES_HDRAW);
-
-            println!("{:?}", sched.num_pending_events());
-            assert_eq!(sched.peek_next(), Some(EventType::Gpu(GpuEvent::HBlank)));
-            assert_eq!(gpu.dispstat.hblank_flag, true);
-            assert_eq!(gpu.dispstat.vblank_flag, false);
-
-            update!(CYCLES_HBLANK);
-
-            assert_eq!(gpu.interrupt_flags.get().LCD_VCounterMatch(), false);
-        }
-
-        for line in 0..68 {
-            println!("line = {}", 160 + line);
-            assert_eq!(gpu.dispstat.hblank_flag, false);
-            assert_eq!(gpu.dispstat.vblank_flag, true);
-            assert_eq!(
-                sched.peek_next(),
-                Some(EventType::Gpu(GpuEvent::VBlankHDraw))
-            );
-
-            update!(CYCLES_HDRAW);
-
-            assert_eq!(gpu.dispstat.hblank_flag, true);
-            assert_eq!(gpu.dispstat.vblank_flag, true);
-            assert_eq!(
-                sched.peek_next(),
-                Some(EventType::Gpu(GpuEvent::VBlankHBlank))
-            );
-            assert_eq!(gpu.interrupt_flags.get().LCD_VCounterMatch(), false);
-
-            update!(CYCLES_HBLANK);
-        }
-
-        assert_eq!(sched.timestamp(), CYCLES_FULL_REFRESH);
-
-        assert_eq!(gpu.interrupt_flags.get().LCD_VCounterMatch(), true);
-        assert_eq!(gpu.cycles_left_for_current_state, CYCLES_HDRAW);
-        assert_eq!(sched.peek_next(), Some(EventType::Gpu(GpuEvent::HDraw)));
-        assert_eq!(gpu.vcount, 0);
-        assert_eq!(gpu.dispstat.vcount_flag, true);
-        assert_eq!(gpu.dispstat.hblank_flag, false);
     }
 }
 

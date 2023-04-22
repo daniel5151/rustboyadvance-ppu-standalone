@@ -119,8 +119,8 @@ impl Gpu {
                     }
                 }
             } else {
-                for x in 0..DISPLAY_WIDTH {
-                    if occupied[x] {
+                for (x, occupied) in occupied.iter().take(DISPLAY_WIDTH).enumerate() {
+                    if *occupied {
                         continue;
                     }
                     self.finalize_pixel(x, y, &win_out, &win_out_backgrounds, backdrop_color);

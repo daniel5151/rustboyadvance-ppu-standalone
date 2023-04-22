@@ -35,14 +35,14 @@ impl Gpu {
             (256, 512) => bg_y / 256,
             (512, 512) => index2d!(u32, bg_x / 256, bg_y / 256, 2),
             _ => unreachable!(),
-        } as u32;
+        };
 
         let mut se_row = (bg_x / 8) % 32;
         let se_column = (bg_y / 8) % 32;
 
         // this will be non-zero if the h-scroll lands in a middle of a tile
         let mut start_tile_x = bg_x % 8;
-        let tile_py = (bg_y % 8) as u32;
+        let tile_py = bg_y % 8;
 
         #[allow(unused)]
         macro_rules! render_loop {
@@ -96,8 +96,8 @@ impl Gpu {
         let viewport = ViewPort::new(texture_size, texture_size);
 
         let ref_point = self.get_ref_point(bg);
-        let pa = self.bg_aff[bg - 2].pa as i16 as i32;
-        let pc = self.bg_aff[bg - 2].pc as i16 as i32;
+        let pa = self.bg_aff[bg - 2].pa as i32;
+        let pc = self.bg_aff[bg - 2].pc as i32;
 
         let screen_block = self.bgcnt[bg].screen_block();
         let char_block = self.bgcnt[bg].char_block();

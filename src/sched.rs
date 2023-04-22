@@ -206,3 +206,9 @@ impl Scheduler {
         self.timestamp - start
     }
 }
+
+impl Default for Scheduler {
+    fn default() -> Self {
+        Self::new()
+    }
+}

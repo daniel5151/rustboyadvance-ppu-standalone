@@ -314,7 +314,7 @@ pub enum ObjMode {
 
 impl From<u16> for ObjMode {
     fn from(v: u16) -> ObjMode {
-        ObjMode::from_u16(v as u16).unwrap()
+        ObjMode::from_u16(v).unwrap()
     }
 }
 
@@ -328,7 +328,7 @@ enum ObjType {
 
 impl From<u16> for ObjType {
     fn from(v: u16) -> ObjType {
-        ObjType::from_u16(v as u16).unwrap()
+        ObjType::from_u16(v).unwrap()
     }
 }
 

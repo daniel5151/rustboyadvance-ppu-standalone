@@ -62,7 +62,7 @@ impl Gpu {
                 }
             }
             let bitmap_index = index2d!(u32, t.0, t.1, DISPLAY_WIDTH);
-            let bitmap_ofs = page_ofs + (bitmap_index as u32);
+            let bitmap_ofs = page_ofs + bitmap_index;
             let index = self.vram.read_8(bitmap_ofs) as u32;
             let color = self.get_palette_color(index, 0, 0);
             self.bg_line[bg][x] = color;
