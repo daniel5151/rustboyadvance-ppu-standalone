@@ -180,7 +180,7 @@ impl Gpu {
         let top_flags = self.bldcnt.target1;
         let bot_flags = self.bldcnt.target2;
 
-        let sfx_enabled = (self.bldcnt.mode != BlendMode::BldNone || obj_alpha_blend)
+        let sfx_enabled = (self.bldcnt.mode != BlendMode::None || obj_alpha_blend)
             && top_flags.contains_render_layer(&top_layer); // sfx must at least have a first target configured
 
         if win.flags.sfx_enabled() && sfx_enabled {
@@ -193,7 +193,7 @@ impl Gpu {
                 let (top_layer, bot_layer) = (top_layer, bot_layer);
 
                 match self.bldcnt.mode {
-                    BlendMode::BldAlpha => {
+                    BlendMode::Alpha => {
                         output[x] = if bot_flags.contains_render_layer(&bot_layer) {
                             self.do_alpha(top_layer.pixel, bot_layer.pixel).to_rgb24()
                         } else {
@@ -201,11 +201,11 @@ impl Gpu {
                             top_layer.pixel.to_rgb24()
                         }
                     }
-                    BlendMode::BldWhite => output[x] = self.do_brighten(top_layer.pixel).to_rgb24(),
+                    BlendMode::White => output[x] = self.do_brighten(top_layer.pixel).to_rgb24(),
 
-                    BlendMode::BldBlack => output[x] = self.do_darken(top_layer.pixel).to_rgb24(),
+                    BlendMode::Black => output[x] = self.do_darken(top_layer.pixel).to_rgb24(),
 
-                    BlendMode::BldNone => output[x] = top_layer.pixel.to_rgb24(),
+                    BlendMode::None => output[x] = top_layer.pixel.to_rgb24(),
                 }
             }
         } else {

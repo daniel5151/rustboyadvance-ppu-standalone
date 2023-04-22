@@ -1,9 +1,9 @@
 //! Rendering for modes 0-3
 
-use super::super::consts::*;
 use super::super::Rgb15;
 use super::super::{Gpu, PixelFormat, SCREEN_BLOCK_SIZE};
 use super::{utils, ViewPort};
+use crate::consts::*;
 use crate::memory::BusIO;
 
 impl Gpu {

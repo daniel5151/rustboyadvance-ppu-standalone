@@ -16,22 +16,8 @@ pub enum GpuEvent {
 
 #[repr(u32)]
 #[derive(Serialize, Deserialize, Debug, PartialOrd, PartialEq, Eq, Copy, Clone)]
-pub enum ApuEvent {
-    Psg1Generate,
-    Psg2Generate,
-    Psg3Generate,
-    Psg4Generate,
-    Sample,
-}
-
-#[repr(u32)]
-#[derive(Serialize, Deserialize, Debug, PartialOrd, PartialEq, Eq, Copy, Clone)]
 pub enum EventType {
-    RunLimitReached,
     Gpu(GpuEvent),
-    Apu(ApuEvent),
-    DmaActivateChannel(usize),
-    TimerOverflow(usize),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq)]

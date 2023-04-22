@@ -8,14 +8,14 @@ extern crate log;
 use num::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
-pub const TIMING_VBLANK: u16 = 1;
-pub const TIMING_HBLANK: u16 = 2;
+const TIMING_VBLANK: u16 = 1;
+const TIMING_HBLANK: u16 = 2;
 
 pub trait DmaNotifer {
     fn notify(&mut self, timing: u16);
 }
 
-pub use self::consts::*;
+use self::consts::*;
 use self::interrupt::{Interrupt, InterruptConnect, SharedInterruptFlags};
 use self::sched::{EventType, FutureEvent, GpuEvent, Scheduler};
 
@@ -28,61 +28,30 @@ macro_rules! index2d {
     };
 }
 
-mod render;
-
 use render::Point;
 
 mod interrupt;
 mod layer;
-mod mosaic;
+mod render;
 mod rgb15;
 mod sched;
 mod sfx;
 mod window;
 
-pub use rgb15::Rgb15;
-pub use window::*;
+use rgb15::Rgb15;
+use window::*;
 
-pub mod regs;
-pub use regs::*;
+mod regs;
+use regs::*;
 
-#[cfg(feature = "debugger")]
-use std::fmt;
-
-#[allow(unused)]
-pub mod consts {
-    pub const WORK_RAM_SIZE: usize = 256 * 1024;
-    pub const INTERNAL_RAM_SIZE: usize = 32 * 1024;
-
-    pub const BIOS_ADDR: u32 = 0x0000_0000;
-    pub const EWRAM_ADDR: u32 = 0x0200_0000;
-    pub const IWRAM_ADDR: u32 = 0x0300_0000;
-    pub const IOMEM_ADDR: u32 = 0x0400_0000;
+mod consts {
     pub const PALRAM_ADDR: u32 = 0x0500_0000;
     pub const VRAM_ADDR: u32 = 0x0600_0000;
     pub const OAM_ADDR: u32 = 0x0700_0000;
-    pub const CART_BASE: u32 = 0x0800_0000;
-    pub const GAMEPAK_WS0_LO: u32 = CART_BASE;
-    pub const GAMEPAK_WS0_HI: u32 = 0x0900_0000;
-    pub const GAMEPAK_WS1_LO: u32 = 0x0A00_0000;
-    pub const GAMEPAK_WS1_HI: u32 = 0x0B00_0000;
-    pub const GAMEPAK_WS2_LO: u32 = 0x0C00_0000;
-    pub const GAMEPAK_WS2_HI: u32 = 0x0D00_0000;
-    pub const SRAM_LO: u32 = 0x0E00_0000;
-    pub const SRAM_HI: u32 = 0x0F00_0000;
 
-    pub const PAGE_BIOS: usize = (BIOS_ADDR >> 24) as usize;
-    pub const PAGE_EWRAM: usize = (EWRAM_ADDR >> 24) as usize;
-    pub const PAGE_IWRAM: usize = (IWRAM_ADDR >> 24) as usize;
-    pub const PAGE_IOMEM: usize = (IOMEM_ADDR >> 24) as usize;
     pub const PAGE_PALRAM: usize = (PALRAM_ADDR >> 24) as usize;
     pub const PAGE_VRAM: usize = (VRAM_ADDR >> 24) as usize;
     pub const PAGE_OAM: usize = (OAM_ADDR >> 24) as usize;
-    pub const PAGE_GAMEPAK_WS0: usize = (GAMEPAK_WS0_LO >> 24) as usize;
-    pub const PAGE_GAMEPAK_WS1: usize = (GAMEPAK_WS1_LO >> 24) as usize;
-    pub const PAGE_GAMEPAK_WS2: usize = (GAMEPAK_WS2_LO >> 24) as usize;
-    pub const PAGE_SRAM_LO: usize = (SRAM_LO >> 24) as usize;
-    pub const PAGE_SRAM_HI: usize = (SRAM_HI >> 24) as usize;
 
     pub const VIDEO_RAM_SIZE: usize = 128 * 1024;
     pub const PALETTE_RAM_SIZE: usize = 1024;
@@ -92,24 +61,18 @@ pub mod consts {
     pub const DISPLAY_HEIGHT: usize = 160;
     pub const VBLANK_LINES: usize = 68;
 
-    pub(crate) const CYCLES_PIXEL: usize = 4;
-    pub(crate) const CYCLES_HDRAW: usize = 960 + 46;
-    pub(crate) const CYCLES_HBLANK: usize = 272 - 46;
-    pub(crate) const CYCLES_SCANLINE: usize = 1232;
-    pub(crate) const CYCLES_VDRAW: usize = 197120;
-    pub(crate) const CYCLES_VBLANK: usize = 83776;
-
-    pub const CYCLES_FULL_REFRESH: usize = 280896;
+    pub const CYCLES_HDRAW: usize = 960 + 46;
+    pub const CYCLES_HBLANK: usize = 272 - 46;
 
     pub const TILE_SIZE: u32 = 0x20;
 
-    pub(crate) const VRAM_OBJ_TILES_START_TEXT: u32 = 0x1_0000;
-    pub(crate) const VRAM_OBJ_TILES_START_BITMAP: u32 = 0x1_4000;
+    pub const VRAM_OBJ_TILES_START_TEXT: u32 = 0x1_0000;
+    pub const VRAM_OBJ_TILES_START_BITMAP: u32 = 0x1_4000;
 }
-pub use self::consts::*;
+
 use debug_stub_derive::DebugStub;
 use enum_primitive_derive::Primitive;
-use memory::BusIO;
+use memory::{Addr, BusIO};
 
 #[derive(Debug, Primitive, Copy, Clone)]
 pub enum PixelFormat {
@@ -378,7 +341,6 @@ impl Gpu {
             }
             _ => panic!("{:?} not supported", self.dispcnt.mode),
         }
-        // self.mosaic_sfx();
     }
 
     /// Clears the gpu obj buffer
@@ -485,175 +447,66 @@ impl Gpu {
     }
 }
 
-// use arm7tdmi::memory::{Addr, BusIO, DebugRead};
+impl BusIO for Gpu {
+    fn read_8(&mut self, addr: Addr) -> u8 {
+        let page = (addr >> 24) as usize;
+        match page {
+            PAGE_PALRAM => self.palette_ram.read_8(addr & 0x3ff),
+            PAGE_VRAM => {
+                // complicated
+                let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
+                if ofs > 0x18000 {
+                    ofs -= 0x8000;
+                }
+                self.vram.read_8(ofs)
+            }
+            PAGE_OAM => self.oam.read_8(addr & 0x3ff),
+            _ => unreachable!(),
+        }
+    }
 
-// impl BusIO for Gpu {
-//     fn read_8(&mut self, addr: Addr) -> u8 {
-//         let page = (addr >> 24) as usize;
-//         match page {
-//             PAGE_PALRAM => self.palette_ram.read_8(addr & 0x3ff),
-//             PAGE_VRAM => {
-//                 // complicated
-//                 let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
-//                 if ofs > 0x18000 {
-//                     ofs -= 0x8000;
-//                 }
-//                 self.vram.read_8(ofs)
-//             }
-//             PAGE_OAM => self.oam.read_8(addr & 0x3ff),
-//             _ => unreachable!(),
-//         }
-//     }
+    fn write_16(&mut self, addr: Addr, value: u16) {
+        let page = (addr >> 24) as usize;
+        match page {
+            PAGE_PALRAM => self.palette_ram.write_16(addr & 0x3fe, value),
+            PAGE_VRAM => {
+                let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
+                if ofs > 0x18000 {
+                    ofs -= 0x8000;
+                }
+                self.vram.write_16(ofs, value)
+            }
+            PAGE_OAM => self.oam.write_16(addr & 0x3fe, value),
+            _ => unreachable!(),
+        }
+    }
 
-//     fn write_16(&mut self, addr: Addr, value: u16) {
-//         let page = (addr >> 24) as usize;
-//         match page {
-//             PAGE_PALRAM => self.palette_ram.write_16(addr & 0x3fe, value),
-//             PAGE_VRAM => {
-//                 let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
-//                 if ofs > 0x18000 {
-//                     ofs -= 0x8000;
-//                 }
-//                 self.vram.write_16(ofs, value)
-//             }
-//             PAGE_OAM => self.oam.write_16(addr & 0x3fe, value),
-//             _ => unreachable!(),
-//         }
-//     }
+    fn write_8(&mut self, addr: Addr, value: u8) {
+        fn expand_value(value: u8) -> u16 {
+            (value as u16) * 0x101
+        }
 
-//     fn write_8(&mut self, addr: Addr, value: u8) {
-//         fn expand_value(value: u8) -> u16 {
-//             (value as u16) * 0x101
-//         }
-
-//         let page = (addr >> 24) as usize;
-//         match page {
-//             PAGE_PALRAM => self.palette_ram.write_16(addr & 0x3fe, expand_value(value)),
-//             PAGE_VRAM => {
-//                 let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
-//                 if ofs > 0x18000 {
-//                     ofs -= 0x8000;
-//                 }
-//                 if ofs < self.vram_obj_tiles_start {
-//                     self.vram.write_16(ofs & !1, expand_value(value));
-//                 }
-//             }
-//             PAGE_OAM => { /* OAM can't be written with 8bit store */ }
-//             _ => unreachable!(),
-//         };
-//     }
-// }
-
-// impl DebugRead for Gpu {
-//     fn debug_read_8(&mut self, addr: Addr) -> u8 {
-//         let page = (addr >> 24) as usize;
-//         match page {
-//             PAGE_PALRAM => self.palette_ram.read_8(addr & 0x3ff),
-//             PAGE_VRAM => self.vram.read_8(addr & ((VIDEO_RAM_SIZE as u32) - 1)),
-//             PAGE_OAM => self.oam.read_8(addr & 0x3ff),
-//             _ => unreachable!(),
-//         }
-//     }
-// }
-
-#[cfg(feature = "debugger")]
-impl fmt::Display for Gpu {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use ansi_term::Style;
-        writeln!(f, "{}", Style::new().bold().paint("GPU Status:"))?;
-        writeln!(f, "\tVCOUNT: {}", self.vcount)?;
-        writeln!(f, "\tDISPCNT: {:?}", self.dispcnt)?;
-        writeln!(f, "\tDISPSTAT: {:?}", self.dispstat)?;
-        writeln!(f, "\tWIN0: {:?}", self.win0)?;
-        writeln!(f, "\tWIN1: {:?}", self.win1)?;
-        Ok(())
+        let page = (addr >> 24) as usize;
+        match page {
+            PAGE_PALRAM => self.palette_ram.write_16(addr & 0x3fe, expand_value(value)),
+            PAGE_VRAM => {
+                let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
+                if ofs > 0x18000 {
+                    ofs -= 0x8000;
+                }
+                if ofs < self.vram_obj_tiles_start {
+                    self.vram.write_16(ofs & !1, expand_value(value));
+                }
+            }
+            PAGE_OAM => { /* OAM can't be written with 8bit store */ }
+            _ => unreachable!(),
+        };
     }
 }
 
-pub mod memory {
-    use std::fmt;
-
+mod memory {
     pub type Addr = u32;
 
-    #[derive(Debug, Copy, Clone)]
-    pub enum MemoryAccess {
-        NonSeq = 0,
-        Seq,
-    }
-
-    impl Default for MemoryAccess {
-        fn default() -> MemoryAccess {
-            MemoryAccess::NonSeq
-        }
-    }
-
-    impl fmt::Display for MemoryAccess {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(
-                f,
-                "{}",
-                match self {
-                    MemoryAccess::NonSeq => "N",
-                    MemoryAccess::Seq => "S",
-                }
-            )
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq, Copy, Clone)]
-    #[repr(u8)]
-    pub enum MemoryAccessWidth {
-        MemoryAccess8 = 0,
-        MemoryAccess16,
-        MemoryAccess32,
-    }
-
-    /// A trait meant to abstract memory accesses and report the access type back to the user of the arm7tdmi::Arm7tdmiCore
-    ///
-    /// struct Memory {
-    ///     data: [u8; 0x4000]
-    /// }
-    ///
-    /// impl MemoryInterface for Memory {
-    ///     fn load_8(&mut self, addr: u32, access: MemoryAccess) {
-    ///         debug!("CPU read {:?} cycle", access);
-    ///         self.data[addr & 0x3fff]
-    ///     }
-    ///
-    ///     fn store_8(&mut self, addr: u32, value: u8, access: MemoryAccess) {
-    ///         debug!("CPU write {:?} cycle", access);
-    ///         self.data[addr & 0x3fff] = value;
-    ///     }
-    ///
-    ///     fn idle_cycle(&mut self) {
-    ///         debug!("CPU idle cycle");
-    ///     }
-    ///
-    ///     // implement rest of trait methods
-    /// }
-    ///
-    /// let mem = Shared::new(Memory { ... });
-    /// let cpu = arm7tdmi::Arm7tdmiCore::new(mem.clone())
-    ///
-    pub trait MemoryInterface {
-        /// Read a byte
-        fn load_8(&mut self, addr: u32, access: MemoryAccess) -> u8;
-        /// Read a halfword
-        fn load_16(&mut self, addr: u32, access: MemoryAccess) -> u16;
-        /// Read a word
-        fn load_32(&mut self, addr: u32, access: MemoryAccess) -> u32;
-
-        /// Write a byte
-        fn store_8(&mut self, addr: u32, value: u8, access: MemoryAccess);
-        /// Write a halfword
-        fn store_16(&mut self, addr: u32, value: u16, access: MemoryAccess);
-        /// Write a word
-        fn store_32(&mut self, addr: u32, value: u32, access: MemoryAccess);
-
-        fn idle_cycle(&mut self);
-    }
-
-    /// Simple trait for accessing bus peripherals (higher level API than the low-level MemoryInterface)
     pub trait BusIO {
         fn read_32(&mut self, addr: Addr) -> u32 {
             self.read_16(addr) as u32 | (self.read_16(addr + 2) as u32) << 16
@@ -696,54 +549,15 @@ pub mod memory {
         }
     }
 
-    /// Helper trait for reading memory as if we were an all-powerfull debugger
-    pub trait DebugRead: BusIO {
-        fn debug_read_32(&mut self, addr: Addr) -> u32 {
-            self.debug_read_16(addr) as u32 | (self.debug_read_16(addr + 2) as u32) << 16
-        }
-
-        fn debug_read_16(&mut self, addr: Addr) -> u16 {
-            self.debug_read_8(addr) as u16 | (self.debug_read_8(addr + 1) as u16) << 8
-        }
-
-        fn debug_read_8(&mut self, addr: Addr) -> u8;
-
-        fn debug_get_bytes(&mut self, range: std::ops::Range<Addr>) -> Vec<u8> {
-            let mut bytes = Vec::new();
-            for b in range {
-                bytes.push(self.debug_read_8(b));
-            }
-            bytes
-        }
-
-        fn debug_get_into_bytes(&mut self, start_addr: Addr, bytes: &mut [u8]) {
-            bytes
-                .iter_mut()
-                .enumerate()
-                .for_each(|(idx, byte)| *byte = self.debug_read_8(start_addr + (idx as Addr)));
-        }
-    }
-
-    /// The caller is assumed to handle out of bound accesses,
-    /// For performance reasons, this impl trusts that 'addr' is within the array range.
     impl BusIO for Box<[u8]> {
         #[inline]
         fn read_8(&mut self, addr: Addr) -> u8 {
-            unsafe { *self.get_unchecked(addr as usize) }
+            self[addr as usize]
         }
 
         #[inline]
         fn write_8(&mut self, addr: Addr, value: u8) {
-            unsafe {
-                *self.get_unchecked_mut(addr as usize) = value;
-            }
-        }
-    }
-
-    impl DebugRead for Box<[u8]> {
-        #[inline]
-        fn debug_read_8(&mut self, addr: Addr) -> u8 {
-            self[addr as usize]
+            self[addr as usize] = value
         }
     }
 }

@@ -235,10 +235,10 @@ impl BlendFlags {
 #[derive(Default, Debug, Serialize, Deserialize, Primitive, PartialEq, Eq, Clone, Copy)]
 pub enum BlendMode {
     #[default]
-    BldNone = 0b00,
-    BldAlpha = 0b01,
-    BldWhite = 0b10,
-    BldBlack = 0b11,
+    None = 0b00,
+    Alpha = 0b01,
+    White = 0b10,
+    Black = 0b11,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone)]

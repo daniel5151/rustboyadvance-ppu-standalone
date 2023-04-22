@@ -30,7 +30,7 @@ impl ViewPort {
     }
 }
 
-use super::consts::{DISPLAY_HEIGHT, DISPLAY_WIDTH};
+use crate::consts::{DISPLAY_HEIGHT, DISPLAY_WIDTH};
 pub(super) static SCREEN_VIEWPORT: ViewPort = ViewPort {
     origin: (0, 0),
     w: DISPLAY_WIDTH as i32,
