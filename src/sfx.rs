@@ -42,7 +42,7 @@ impl Gpu {
     }
 
     /// Composes the render layers into a final scanline while applying needed special effects, and render it to the frame buffer
-    pub fn finalize_scanline(&mut self, bg_start: usize, bg_end: usize) {
+    pub(crate) fn finalize_scanline(&mut self, bg_start: usize, bg_end: usize) {
         let backdrop_color = Rgb15(self.palette_ram.read_16(0));
 
         // filter out disabled backgrounds and sort by priority
