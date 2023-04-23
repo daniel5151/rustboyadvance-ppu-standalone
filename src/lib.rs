@@ -14,7 +14,6 @@ macro_rules! index2d {
     };
 }
 
-mod interrupt;
 mod layer;
 mod regs;
 mod render;
@@ -46,7 +45,6 @@ mod consts {
 }
 
 use self::consts::*;
-use self::interrupt::{Interrupt, InterruptConnect, SharedInterruptFlags};
 use self::regs::*;
 use self::render::Point;
 use self::rgb15::Rgb15;
@@ -104,8 +102,6 @@ impl Default for ObjBufferEntry {
 
 #[derive(Serialize, Deserialize, Clone, DebugStub)]
 pub struct Gpu {
-    interrupt_flags: SharedInterruptFlags,
-
     // registers
     pub vcount: usize, // VCOUNT
     pub dispcnt: DisplayControl,
@@ -133,20 +129,19 @@ pub struct Gpu {
     bg_line: [Box<[Rgb15]>; 4],
 }
 
-impl InterruptConnect for Gpu {
-    fn connect_irq(&mut self, interrupt_flags: SharedInterruptFlags) {
-        self.interrupt_flags = interrupt_flags;
+impl Default for Gpu {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 impl Gpu {
-    pub fn new(interrupt_flags: SharedInterruptFlags) -> Gpu {
+    pub fn new() -> Gpu {
         fn alloc_scanline_buffer() -> Box<[Rgb15]> {
             vec![Rgb15::TRANSPARENT; DISPLAY_WIDTH].into_boxed_slice()
         }
 
         Gpu {
-            interrupt_flags,
             dispcnt: DisplayControl::from(0x80),
             dispstat: Default::default(),
             bgcnt: Default::default(),
@@ -337,7 +332,7 @@ impl Gpu {
         self.dispstat.vcount_flag = vcount_setting == self.vcount;
 
         if self.dispstat.vcount_irq_enable && self.dispstat.vcount_flag {
-            interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_VCounterMatch);
+            // interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_VCounterMatch);
         }
     }
 
@@ -345,7 +340,7 @@ impl Gpu {
     pub fn handle_hdraw_end(&mut self) {
         self.dispstat.hblank_flag = true;
         if self.dispstat.hblank_irq_enable {
-            interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_HBlank);
+            // interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_HBlank);
         };
     }
 
@@ -370,7 +365,7 @@ impl Gpu {
             self.dispstat.vblank_flag = true;
             self.dispstat.hblank_flag = false;
             if self.dispstat.vblank_irq_enable {
-                interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_VBlank);
+                // interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_VBlank);
             };
 
             self.obj_buffer_reset();
@@ -380,7 +375,7 @@ impl Gpu {
     pub fn handle_vblank_hdraw_end(&mut self) {
         self.dispstat.hblank_flag = true;
         if self.dispstat.hblank_irq_enable {
-            interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_HBlank);
+            // interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_HBlank);
         };
     }
 
