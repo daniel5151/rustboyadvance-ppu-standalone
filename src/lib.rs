@@ -22,13 +22,7 @@ mod sfx;
 mod window;
 
 mod consts {
-    pub const PALRAM_ADDR: u32 = 0x0500_0000;
     pub const VRAM_ADDR: u32 = 0x0600_0000;
-    pub const OAM_ADDR: u32 = 0x0700_0000;
-
-    pub const PAGE_PALRAM: usize = (PALRAM_ADDR >> 24) as usize;
-    pub const PAGE_VRAM: usize = (VRAM_ADDR >> 24) as usize;
-    pub const PAGE_OAM: usize = (OAM_ADDR >> 24) as usize;
 
     pub const VIDEO_RAM_SIZE: usize = 128 * 1024;
     pub const PALETTE_RAM_SIZE: usize = 1024;
@@ -42,7 +36,52 @@ mod consts {
 
     pub const VRAM_OBJ_TILES_START_TEXT: u32 = 0x1_0000;
     pub const VRAM_OBJ_TILES_START_BITMAP: u32 = 0x1_4000;
+
+    pub const REG_DISPCNT: u32 = 0x0400_0000; //  2    R/W    LCD Control
+    pub const REG_DISPSTAT: u32 = 0x0400_0004; //  2    R/W    General LCD Status (STAT,LYC)
+    pub const REG_BG0CNT: u32 = 0x0400_0008; //  2    R/W    BG0 Control
+    pub const REG_BG1CNT: u32 = 0x0400_000A; //  2    R/W    BG1 Control
+    pub const REG_BG2CNT: u32 = 0x0400_000C; //  2    R/W    BG2 Control
+    pub const REG_BG3CNT: u32 = 0x0400_000E; //  2    R/W    BG3 Control
+    pub const REG_BG0HOFS: u32 = 0x0400_0010; //  2    W      BG0 X-Offset
+    pub const REG_BG0VOFS: u32 = 0x0400_0012; //  2    W      BG0 Y-Offset
+    pub const REG_BG1HOFS: u32 = 0x0400_0014; //  2    W      BG1 X-Offset
+    pub const REG_BG1VOFS: u32 = 0x0400_0016; //  2    W      BG1 Y-Offset
+    pub const REG_BG2HOFS: u32 = 0x0400_0018; //  2    W      BG2 X-Offset
+    pub const REG_BG2VOFS: u32 = 0x0400_001A; //  2    W      BG2 Y-Offset
+    pub const REG_BG3HOFS: u32 = 0x0400_001C; //  2    W      BG3 X-Offset
+    pub const REG_BG3VOFS: u32 = 0x0400_001E; //  2    W      BG3 Y-Offset
+    pub const REG_BG2PA: u32 = 0x0400_0020; //  2    W      BG2 Rotation/Scaling Parameter A (dx)
+    pub const REG_BG2PB: u32 = 0x0400_0022; //  2    W      BG2 Rotation/Scaling Parameter B (dmx)
+    pub const REG_BG2PC: u32 = 0x0400_0024; //  2    W      BG2 Rotation/Scaling Parameter C (dy)
+    pub const REG_BG2PD: u32 = 0x0400_0026; //  2    W      BG2 Rotation/Scaling Parameter D (dmy)
+    pub const REG_BG2X_L: u32 = 0x0400_0028; //  4    W      BG2 Reference Point X-Coordinate, lower 16 bit
+    pub const REG_BG2X_H: u32 = 0x0400_002A; //  4    W      BG2 Reference Point X-Coordinate, upper 16 bit
+    pub const REG_BG2Y_L: u32 = 0x0400_002C; //  4    W      BG2 Reference Point Y-Coordinate, lower 16 bit
+    pub const REG_BG2Y_H: u32 = 0x0400_002E; //  4    W      BG2 Reference Point Y-Coordinate, upper 16 bit
+    pub const REG_BG3PA: u32 = 0x0400_0030; //  2    W      BG3 Rotation/Scaling Parameter A (dx)
+    pub const REG_BG3PB: u32 = 0x0400_0032; //  2    W      BG3 Rotation/Scaling Parameter B (dmx)
+    pub const REG_BG3PC: u32 = 0x0400_0034; //  2    W      BG3 Rotation/Scaling Parameter C (dy)
+    pub const REG_BG3PD: u32 = 0x0400_0036; //  2    W      BG3 Rotation/Scaling Parameter D (dmy)
+    pub const REG_BG3X_L: u32 = 0x0400_0038; //  4    W      BG3 Reference Point X-Coordinate, lower 16 bit
+    pub const REG_BG3X_H: u32 = 0x0400_003A; //  4    W      BG3 Reference Point X-Coordinate, upper 16 bit
+    pub const REG_BG3Y_L: u32 = 0x0400_003C; //  4    W      BG3 Reference Point Y-Coordinate, lower 16 bit
+    pub const REG_BG3Y_H: u32 = 0x0400_003E; //  4    W      BG3 Reference Point Y-Coordinate, upper 16 bit
+    pub const REG_WIN0H: u32 = 0x0400_0040; //  2    W      Window 0 Horizontal Dimensions
+    pub const REG_WIN1H: u32 = 0x0400_0042; //  2    W      Window 1 Horizontal Dimensions
+    pub const REG_WIN0V: u32 = 0x0400_0044; //  2    W      Window 0 Vertical Dimensions
+    pub const REG_WIN1V: u32 = 0x0400_0046; //  2    W      Window 1 Vertical Dimensions
+    pub const REG_WININ: u32 = 0x0400_0048; //  2    R/W    Inside of Window 0 and 1
+    pub const REG_WINOUT: u32 = 0x0400_004A; //  2    R/W    Inside of OBJ Window & Outside of Windows
+    pub const REG_MOSAIC: u32 = 0x0400_004C; //  2    W      Mosaic Size
+    pub const REG_BLDCNT: u32 = 0x0400_0050; //  2    R/W    Color Special Effects Selection
+    pub const REG_BLDALPHA: u32 = 0x0400_0052; //  2    R/W    Alpha Blending Coefficients
+    pub const REG_BLDY: u32 = 0x0400_0054; //  2    W      Brightness (Fade-In/Out) Coefficient
 }
+
+pub use self::consts::OAM_SIZE;
+pub use self::consts::PALETTE_RAM_SIZE;
+pub use self::consts::VIDEO_RAM_SIZE;
 
 use self::consts::*;
 use self::regs::*;
@@ -51,9 +90,8 @@ use self::rgb15::Rgb15;
 use self::window::*;
 use debug_stub_derive::DebugStub;
 use enum_primitive_derive::Primitive;
-use memory::{Addr, BusIO};
+use memory::BusIO;
 use num::FromPrimitive;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Primitive, Copy, Clone)]
 enum PixelFormat {
@@ -69,7 +107,7 @@ struct AffineMatrix {
     pd: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct BgAffine {
     pub pa: i16, // dx
     pub pb: i16, // dmx
@@ -81,7 +119,7 @@ pub struct BgAffine {
     pub internal_y: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 struct ObjBufferEntry {
     window: bool,
     alpha: bool,
@@ -100,7 +138,7 @@ impl Default for ObjBufferEntry {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, DebugStub)]
+#[derive(Clone, DebugStub)]
 pub struct Gpu {
     // registers
     pub vcount: usize, // VCOUNT
@@ -119,9 +157,9 @@ pub struct Gpu {
     pub bldalpha: BlendAlpha,
     pub bldy: u16,
 
-    palette_ram: Box<[u8]>,
-    vram: Box<[u8]>,
-    oam: Box<[u8]>,
+    palette_ram: &'static [u8; PALETTE_RAM_SIZE],
+    vram: &'static [u8; VIDEO_RAM_SIZE],
+    oam: &'static [u8; OAM_SIZE],
 
     vram_obj_tiles_start: u32,
     obj_buffer: Box<[ObjBufferEntry]>,
@@ -129,19 +167,18 @@ pub struct Gpu {
     bg_line: [Box<[Rgb15]>; 4],
 }
 
-impl Default for Gpu {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Gpu {
-    pub fn new() -> Gpu {
+    pub fn new(
+        palette_ram: &'static [u8; PALETTE_RAM_SIZE],
+        vram: &'static [u8; VIDEO_RAM_SIZE],
+        oam: &'static [u8; OAM_SIZE],
+    ) -> Gpu {
         fn alloc_scanline_buffer() -> Box<[Rgb15]> {
             vec![Rgb15::TRANSPARENT; DISPLAY_WIDTH].into_boxed_slice()
         }
 
         Gpu {
+            vcount: 0,
             dispcnt: DisplayControl::from(0x80),
             dispstat: Default::default(),
             bgcnt: Default::default(),
@@ -157,10 +194,10 @@ impl Gpu {
             bldalpha: BlendAlpha::default(),
             bldy: 0,
 
-            vcount: 0,
-            palette_ram: vec![0; PALETTE_RAM_SIZE].into_boxed_slice(),
-            vram: vec![0; VIDEO_RAM_SIZE].into_boxed_slice(),
-            oam: vec![0; OAM_SIZE].into_boxed_slice(),
+            palette_ram,
+            vram,
+            oam,
+
             obj_buffer: vec![Default::default(); DISPLAY_WIDTH * DISPLAY_HEIGHT].into_boxed_slice(),
             frame_buffer: vec![0; DISPLAY_WIDTH * DISPLAY_HEIGHT].into_boxed_slice(),
             bg_line: [
@@ -174,7 +211,7 @@ impl Gpu {
     }
 
     #[inline]
-    pub fn write_dispcnt(&mut self, value: u16) {
+    fn write_dispcnt(&mut self, value: u16) {
         let old_mode = self.dispcnt.mode;
         self.dispcnt.write(value);
         let new_mode = self.dispcnt.mode;
@@ -185,6 +222,100 @@ impl Gpu {
             } else {
                 VRAM_OBJ_TILES_START_TEXT
             };
+        }
+    }
+
+    pub fn register_write(&mut self, addr: u32, value: u16) {
+        fn sign_extend_i32(value: i32, size: u32) -> i32 {
+            let shift = 32 - size;
+            (value << shift) >> shift
+        }
+
+        macro_rules! write_reference_point {
+            (low bg $coord:ident $internal:ident) => {{
+                let i = ((addr - REG_BG2X_L) / 0x10) as usize;
+                let t = self.bg_aff[i].$coord as u32;
+                self.bg_aff[i].$coord = ((t & 0xffff0000) + (value as u32)) as i32;
+                let new_value = ((t & 0xffff0000) + (value as u32)) as i32;
+                self.bg_aff[i].$coord = new_value;
+                self.bg_aff[i].$internal = new_value;
+            }};
+            (high bg $coord:ident $internal:ident) => {{
+                let i = ((addr - REG_BG2X_L) / 0x10) as usize;
+                let t = self.bg_aff[i].$coord;
+                let new_value =
+                    (t & 0xffff) | ((sign_extend_i32((value & 0xfff) as i32, 12)) << 16);
+                self.bg_aff[i].$coord = new_value;
+                self.bg_aff[i].$internal = new_value;
+            }};
+        }
+
+        match addr {
+            REG_DISPCNT => self.write_dispcnt(value),
+            REG_DISPSTAT => self.dispstat.write(value),
+            REG_BG0CNT => self.bgcnt[0].write(value),
+            REG_BG1CNT => self.bgcnt[1].write(value),
+            REG_BG2CNT => self.bgcnt[2].write(value),
+            REG_BG3CNT => self.bgcnt[3].write(value),
+            REG_BG0HOFS => self.bg_hofs[0] = value & 0x1ff,
+            REG_BG0VOFS => self.bg_vofs[0] = value & 0x1ff,
+            REG_BG1HOFS => self.bg_hofs[1] = value & 0x1ff,
+            REG_BG1VOFS => self.bg_vofs[1] = value & 0x1ff,
+            REG_BG2HOFS => self.bg_hofs[2] = value & 0x1ff,
+            REG_BG2VOFS => self.bg_vofs[2] = value & 0x1ff,
+            REG_BG3HOFS => self.bg_hofs[3] = value & 0x1ff,
+            REG_BG3VOFS => self.bg_vofs[3] = value & 0x1ff,
+            REG_BG2X_L | REG_BG3X_L => write_reference_point!(low bg x internal_x),
+            REG_BG2Y_L | REG_BG3Y_L => write_reference_point!(low bg y internal_y),
+            REG_BG2X_H | REG_BG3X_H => write_reference_point!(high bg x internal_x),
+            REG_BG2Y_H | REG_BG3Y_H => write_reference_point!(high bg y internal_y),
+            REG_BG2PA => self.bg_aff[0].pa = value as i16,
+            REG_BG2PB => self.bg_aff[0].pb = value as i16,
+            REG_BG2PC => self.bg_aff[0].pc = value as i16,
+            REG_BG2PD => self.bg_aff[0].pd = value as i16,
+            REG_BG3PA => self.bg_aff[1].pa = value as i16,
+            REG_BG3PB => self.bg_aff[1].pb = value as i16,
+            REG_BG3PC => self.bg_aff[1].pc = value as i16,
+            REG_BG3PD => self.bg_aff[1].pd = value as i16,
+            REG_WIN0H => {
+                let right = value & 0xff;
+                let left = value >> 8;
+                self.win0.right = right as u8;
+                self.win0.left = left as u8;
+            }
+            REG_WIN1H => {
+                let right = value & 0xff;
+                let left = value >> 8;
+                self.win1.right = right as u8;
+                self.win1.left = left as u8;
+            }
+            REG_WIN0V => {
+                let bottom = value & 0xff;
+                let top = value >> 8;
+                self.win0.bottom = bottom as u8;
+                self.win0.top = top as u8;
+            }
+            REG_WIN1V => {
+                let bottom = value & 0xff;
+                let top = value >> 8;
+                self.win1.bottom = bottom as u8;
+                self.win1.top = top as u8;
+            }
+            REG_WININ => {
+                let value = value & !0xc0c0;
+                self.win0.flags = WindowFlags::from(value & 0xff);
+                self.win1.flags = WindowFlags::from(value >> 8);
+            }
+            REG_WINOUT => {
+                let value = value & !0xc0c0;
+                self.winout_flags = WindowFlags::from(value & 0xff);
+                self.winobj_flags = WindowFlags::from(value >> 8);
+            }
+            REG_MOSAIC => self.mosaic.0 = value,
+            REG_BLDCNT => self.bldcnt.write(value),
+            REG_BLDALPHA => self.bldalpha.write(value),
+            REG_BLDY => self.bldy = core::cmp::min(value & 0b11111, 16),
+            _ => debug!("unexpected register write: {:x?} <-- {:x?}", addr, value),
         }
     }
 
@@ -392,117 +523,23 @@ impl Gpu {
     }
 }
 
-impl BusIO for Gpu {
-    fn read_8(&mut self, addr: Addr) -> u8 {
-        let page = (addr >> 24) as usize;
-        match page {
-            PAGE_PALRAM => self.palette_ram.read_8(addr & 0x3ff),
-            PAGE_VRAM => {
-                // complicated
-                let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
-                if ofs > 0x18000 {
-                    ofs -= 0x8000;
-                }
-                self.vram.read_8(ofs)
-            }
-            PAGE_OAM => self.oam.read_8(addr & 0x3ff),
-            _ => unreachable!(),
-        }
-    }
-
-    fn write_16(&mut self, addr: Addr, value: u16) {
-        let page = (addr >> 24) as usize;
-        match page {
-            PAGE_PALRAM => self.palette_ram.write_16(addr & 0x3fe, value),
-            PAGE_VRAM => {
-                let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
-                if ofs > 0x18000 {
-                    ofs -= 0x8000;
-                }
-                self.vram.write_16(ofs, value)
-            }
-            PAGE_OAM => self.oam.write_16(addr & 0x3fe, value),
-            _ => unreachable!(),
-        }
-    }
-
-    fn write_8(&mut self, addr: Addr, value: u8) {
-        fn expand_value(value: u8) -> u16 {
-            (value as u16) * 0x101
-        }
-
-        let page = (addr >> 24) as usize;
-        match page {
-            PAGE_PALRAM => self.palette_ram.write_16(addr & 0x3fe, expand_value(value)),
-            PAGE_VRAM => {
-                let mut ofs = addr & ((VIDEO_RAM_SIZE as u32) - 1);
-                if ofs > 0x18000 {
-                    ofs -= 0x8000;
-                }
-                if ofs < self.vram_obj_tiles_start {
-                    self.vram.write_16(ofs & !1, expand_value(value));
-                }
-            }
-            PAGE_OAM => { /* OAM can't be written with 8bit store */ }
-            _ => unreachable!(),
-        };
-    }
-}
-
 mod memory {
-    pub type Addr = u32;
-
     pub trait BusIO {
-        fn read_32(&mut self, addr: Addr) -> u32 {
+        fn read_32(&mut self, addr: u32) -> u32 {
             self.read_16(addr) as u32 | (self.read_16(addr + 2) as u32) << 16
         }
 
-        fn read_16(&mut self, addr: Addr) -> u16 {
-            self.default_read_16(addr)
-        }
-
-        #[inline(always)]
-        fn default_read_16(&mut self, addr: Addr) -> u16 {
+        fn read_16(&mut self, addr: u32) -> u16 {
             self.read_8(addr) as u16 | (self.read_8(addr + 1) as u16) << 8
         }
 
-        fn read_8(&mut self, addr: Addr) -> u8;
-
-        fn write_32(&mut self, addr: Addr, value: u32) {
-            self.write_16(addr, (value & 0xffff) as u16);
-            self.write_16(addr + 2, (value >> 16) as u16);
-        }
-
-        fn write_16(&mut self, addr: Addr, value: u16) {
-            self.default_write_16(addr, value)
-        }
-
-        #[inline(always)]
-        fn default_write_16(&mut self, addr: Addr, value: u16) {
-            self.write_8(addr, (value & 0xff) as u8);
-            self.write_8(addr + 1, ((value >> 8) & 0xff) as u8);
-        }
-
-        fn write_8(&mut self, addr: Addr, value: u8);
-
-        fn get_bytes(&mut self, range: std::ops::Range<u32>) -> Vec<u8> {
-            let mut bytes = Vec::new();
-            for b in range {
-                bytes.push(self.read_8(b));
-            }
-            bytes
-        }
+        fn read_8(&mut self, addr: u32) -> u8;
     }
 
-    impl BusIO for Box<[u8]> {
+    impl<const N: usize> BusIO for &'static [u8; N] {
         #[inline]
-        fn read_8(&mut self, addr: Addr) -> u8 {
+        fn read_8(&mut self, addr: u32) -> u8 {
             self[addr as usize]
-        }
-
-        #[inline]
-        fn write_8(&mut self, addr: Addr, value: u8) {
-            self[addr as usize] = value
         }
     }
 }
