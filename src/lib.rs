@@ -5,20 +5,6 @@ extern crate bitflags;
 #[macro_use]
 extern crate log;
 
-use num::FromPrimitive;
-use serde::{Deserialize, Serialize};
-
-const TIMING_VBLANK: u16 = 1;
-const TIMING_HBLANK: u16 = 2;
-
-pub trait DmaNotifer {
-    fn notify(&mut self, timing: u16);
-}
-
-use self::consts::*;
-use self::interrupt::{Interrupt, InterruptConnect, SharedInterruptFlags};
-use self::sched::{EventType, FutureEvent, GpuEvent, Scheduler};
-
 macro_rules! index2d {
     ($x:expr, $y:expr, $w:expr) => {
         $w * $y + $x
@@ -28,21 +14,13 @@ macro_rules! index2d {
     };
 }
 
-use render::Point;
-
 mod interrupt;
 mod layer;
+mod regs;
 mod render;
 mod rgb15;
-mod sched;
 mod sfx;
 mod window;
-
-use rgb15::Rgb15;
-use window::*;
-
-mod regs;
-use regs::*;
 
 mod consts {
     pub const PALRAM_ADDR: u32 = 0x0500_0000;
@@ -61,18 +39,23 @@ mod consts {
     pub const DISPLAY_HEIGHT: usize = 160;
     pub const VBLANK_LINES: usize = 68;
 
-    pub const CYCLES_HDRAW: usize = 960 + 46;
-    pub const CYCLES_HBLANK: usize = 272 - 46;
-
     pub const TILE_SIZE: u32 = 0x20;
 
     pub const VRAM_OBJ_TILES_START_TEXT: u32 = 0x1_0000;
     pub const VRAM_OBJ_TILES_START_BITMAP: u32 = 0x1_4000;
 }
 
+use self::consts::*;
+use self::interrupt::{Interrupt, InterruptConnect, SharedInterruptFlags};
+use self::regs::*;
+use self::render::Point;
+use self::rgb15::Rgb15;
+use self::window::*;
 use debug_stub_derive::DebugStub;
 use enum_primitive_derive::Primitive;
 use memory::{Addr, BusIO};
+use num::FromPrimitive;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Primitive, Copy, Clone)]
 enum PixelFormat {
@@ -156,12 +139,8 @@ impl InterruptConnect for Gpu {
     }
 }
 
-type FutureGpuEvent = (GpuEvent, usize);
-
 impl Gpu {
-    pub fn new(sched: &mut Scheduler, interrupt_flags: SharedInterruptFlags) -> Gpu {
-        sched.schedule((EventType::Gpu(GpuEvent::HDraw), CYCLES_HDRAW));
-
+    pub fn new(interrupt_flags: SharedInterruptFlags) -> Gpu {
         fn alloc_scanline_buffer() -> Box<[Rgb15]> {
             vec![Rgb15::TRANSPARENT; DISPLAY_WIDTH].into_boxed_slice()
         }
@@ -363,18 +342,14 @@ impl Gpu {
     }
 
     #[inline]
-    fn handle_hdraw_end<D: DmaNotifer>(&mut self, dma_notifier: &mut D) -> FutureGpuEvent {
+    pub fn handle_hdraw_end(&mut self) {
         self.dispstat.hblank_flag = true;
         if self.dispstat.hblank_irq_enable {
             interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_HBlank);
         };
-        dma_notifier.notify(TIMING_HBLANK);
-
-        // Next event
-        (GpuEvent::HBlank, CYCLES_HBLANK)
     }
 
-    fn handle_hblank_end<D: DmaNotifer>(&mut self, dma_notifier: &mut D) -> FutureGpuEvent {
+    pub fn handle_hblank_end(&mut self) {
         self.update_vcount(self.vcount + 1);
 
         if self.vcount < DISPLAY_HEIGHT {
@@ -385,8 +360,6 @@ impl Gpu {
                 self.bg_aff[i].internal_x += self.bg_aff[i].pb as i32;
                 self.bg_aff[i].internal_y += self.bg_aff[i].pd as i32;
             }
-
-            (GpuEvent::HDraw, CYCLES_HDRAW)
         } else {
             // latch BG2/3 reference points on vblank
             for i in 0..2 {
@@ -400,47 +373,27 @@ impl Gpu {
                 interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_VBlank);
             };
 
-            dma_notifier.notify(TIMING_VBLANK);
-
             self.obj_buffer_reset();
-
-            (GpuEvent::VBlankHDraw, CYCLES_HDRAW)
         }
     }
 
-    fn handle_vblank_hdraw_end(&mut self) -> FutureGpuEvent {
+    pub fn handle_vblank_hdraw_end(&mut self) {
         self.dispstat.hblank_flag = true;
         if self.dispstat.hblank_irq_enable {
             interrupt::signal_irq(&self.interrupt_flags, Interrupt::LCD_HBlank);
         };
-        (GpuEvent::VBlankHBlank, CYCLES_HBLANK)
     }
 
-    fn handle_vblank_hblank_end(&mut self) -> FutureGpuEvent {
+    pub fn handle_vblank_hblank_end(&mut self) {
         if self.vcount < DISPLAY_HEIGHT + VBLANK_LINES - 1 {
             self.update_vcount(self.vcount + 1);
             self.dispstat.hblank_flag = false;
-            (GpuEvent::VBlankHDraw, CYCLES_HDRAW)
         } else {
             self.update_vcount(0);
             self.dispstat.vblank_flag = false;
             self.dispstat.hblank_flag = false;
             self.render_scanline();
-            (GpuEvent::HDraw, CYCLES_HDRAW)
         }
-    }
-
-    pub fn on_event<D>(&mut self, event: GpuEvent, dma_notifier: &mut D) -> FutureEvent
-    where
-        D: DmaNotifer,
-    {
-        let (event, when) = match event {
-            GpuEvent::HDraw => self.handle_hdraw_end(dma_notifier),
-            GpuEvent::HBlank => self.handle_hblank_end(dma_notifier),
-            GpuEvent::VBlankHDraw => self.handle_vblank_hdraw_end(),
-            GpuEvent::VBlankHBlank => self.handle_vblank_hblank_end(),
-        };
-        (EventType::Gpu(event), when)
     }
 }
 
