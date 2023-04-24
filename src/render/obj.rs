@@ -55,7 +55,7 @@ impl ObjAttrs {
     }
 }
 
-impl Gpu {
+impl GbaPpu {
     fn get_affine_matrix(&mut self, affine_index: u32) -> AffineMatrix {
         let mut offset = AFFINE_FILL + affine_index * 16 * 2;
         let pa = self.oam.read_16(offset) as i16 as i32;

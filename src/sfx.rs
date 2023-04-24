@@ -28,7 +28,7 @@ fn filter_window_backgrounds(
         .collect()
 }
 
-impl Gpu {
+impl GbaPpu {
     #[allow(unused)]
     fn layer_to_pixel(&mut self, x: usize, y: usize, layer: &RenderLayer) -> Rgb15 {
         match layer.kind {

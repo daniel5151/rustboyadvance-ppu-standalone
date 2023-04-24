@@ -1,13 +1,13 @@
 //! Rendering for modes 4-5
 
-use super::super::Gpu;
+use super::super::GbaPpu;
 use super::super::Rgb15;
 use crate::consts::*;
 
 use super::{utils, MODE5_VIEWPORT, SCREEN_VIEWPORT};
 use crate::memory::BusIO;
 
-impl Gpu {
+impl GbaPpu {
     pub(in super::super) fn render_mode3(&mut self, bg: usize) {
         let _y = self.vcount;
 

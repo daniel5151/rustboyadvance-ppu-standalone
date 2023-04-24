@@ -1,12 +1,12 @@
 //! Rendering for modes 0-3
 
 use super::super::Rgb15;
-use super::super::{Gpu, PixelFormat, SCREEN_BLOCK_SIZE};
+use super::super::{GbaPpu, PixelFormat, SCREEN_BLOCK_SIZE};
 use super::{utils, ViewPort};
 use crate::consts::*;
 use crate::memory::BusIO;
 
-impl Gpu {
+impl GbaPpu {
     pub(in super::super) fn render_reg_bg(&mut self, bg: usize) {
         let (h_ofs, v_ofs) = (self.bg_hofs[bg] as u32, self.bg_vofs[bg] as u32);
         let tileset_base = self.bgcnt[bg].char_block();

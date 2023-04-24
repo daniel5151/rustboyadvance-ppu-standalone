@@ -139,27 +139,27 @@ impl Default for ObjBufferEntry {
 }
 
 #[derive(Clone, DebugStub)]
-pub struct Gpu {
+pub struct GbaPpu {
     // registers
-    pub vcount: usize, // VCOUNT
-    pub dispcnt: DisplayControl,
-    pub dispstat: DisplayStatus,
-    pub bgcnt: [BgControl; 4],
-    pub bg_vofs: [u16; 4],
-    pub bg_hofs: [u16; 4],
-    pub bg_aff: [BgAffine; 2],
-    pub win0: Window,
-    pub win1: Window,
-    pub winout_flags: WindowFlags,
-    pub winobj_flags: WindowFlags,
-    pub mosaic: RegMosaic,
-    pub bldcnt: BlendControl,
-    pub bldalpha: BlendAlpha,
-    pub bldy: u16,
+    vcount: usize, // VCOUNT
+    dispcnt: DisplayControl,
+    dispstat: DisplayStatus,
+    bgcnt: [BgControl; 4],
+    bg_vofs: [u16; 4],
+    bg_hofs: [u16; 4],
+    bg_aff: [BgAffine; 2],
+    win0: Window,
+    win1: Window,
+    winout_flags: WindowFlags,
+    winobj_flags: WindowFlags,
+    mosaic: RegMosaic,
+    bldcnt: BlendControl,
+    bldalpha: BlendAlpha,
+    bldy: u16,
 
-    palette_ram: &'static [u8; PALETTE_RAM_SIZE],
-    vram: &'static [u8; VIDEO_RAM_SIZE],
-    oam: &'static [u8; OAM_SIZE],
+    palette_ram: &'static [u8],
+    vram: &'static [u8],
+    oam: &'static [u8],
 
     vram_obj_tiles_start: u32,
     obj_buffer: Box<[ObjBufferEntry]>,
@@ -167,17 +167,13 @@ pub struct Gpu {
     bg_line: [Box<[Rgb15]>; 4],
 }
 
-impl Gpu {
-    pub fn new(
-        palette_ram: &'static [u8; PALETTE_RAM_SIZE],
-        vram: &'static [u8; VIDEO_RAM_SIZE],
-        oam: &'static [u8; OAM_SIZE],
-    ) -> Gpu {
+impl GbaPpu {
+    pub fn new(palette_ram: &'static [u8], vram: &'static [u8], oam: &'static [u8]) -> GbaPpu {
         fn alloc_scanline_buffer() -> Box<[Rgb15]> {
             vec![Rgb15::TRANSPARENT; DISPLAY_WIDTH].into_boxed_slice()
         }
 
-        Gpu {
+        GbaPpu {
             vcount: 0,
             dispcnt: DisplayControl::from(0x80),
             dispstat: Default::default(),
@@ -537,6 +533,13 @@ mod memory {
     }
 
     impl<const N: usize> BusIO for &'static [u8; N] {
+        #[inline]
+        fn read_8(&mut self, addr: u32) -> u8 {
+            self[addr as usize]
+        }
+    }
+
+    impl BusIO for &'static [u8] {
         #[inline]
         fn read_8(&mut self, addr: u32) -> u8 {
             self[addr as usize]

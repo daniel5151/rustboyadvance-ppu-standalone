@@ -1,5 +1,5 @@
 [package]
-name = "rustyboyadvance-ppu"
+name = "rustyboyadvance-ppu-standalone"
 version = "0.1.0"
 edition = "2021"
 
